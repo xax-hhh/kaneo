@@ -3,6 +3,7 @@ name: Build and Push Kaneo
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   HARBOR_REGISTRY: harbor.k8s.local:32078
