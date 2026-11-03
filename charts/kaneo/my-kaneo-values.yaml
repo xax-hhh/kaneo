@@ -1,0 +1,47 @@
+# my-kaneo-values.yaml
+
+# 1. 告诉它用你自己造的镜像
+kaneo:
+  image:
+    repository: harbor.k8s.local:32078/myapp/kaneo
+    tag: latest
+    pullPolicy: Always
+  
+  # 2. 告诉它你的访问域名和密码
+  env:
+    clientUrl: "https://kaneo.k8s.local"
+    # 这是登录用的密钥，必须 32 位，用这个就行
+    authSecret: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+    
+  # 3. 限制它的内存，免得把你机器撑爆
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+# 4. 让它用你的 Longhorn 存数据库
+postgresql:
+  persistence:
+    enabled: true
+    size: 2Gi
+    storageClass: "longhorn"
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { cpu: 200m, memory: 256Mi }
+
+# 5. 接入你的 Envoy 网关（最关键的一步）
+gateway:
+  enabled: true
+  parentRefs:
+    - name: monitoring-gateway
+      namespace: monitoring
+      sectionName: https
+  hostnames:
+    - "kaneo.k8s.local"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - service: kaneo
+          port: 5173
